@@ -110,11 +110,9 @@ load_data()
 
 st.markdown('<div class="title">🍽️ College Cafeteria Dashboard</div>', unsafe_allow_html=True)
 
-rain(
-    emoji=["🍔", "🥪", "🧃"],
-    font_size=28,
-    falling_speed="slow"
-)
+rain(emoji="🍔", font_size=28, falling_speed="slow")
+rain(emoji="🥪", font_size=28, falling_speed="slow")
+rain(emoji="🧃", font_size=28, falling_speed="slow")
 
 inventory = st.session_state.inventory
 
@@ -255,6 +253,7 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
             st.info("No orders have been placed yet.")
 
 badge(type="github", name="Cafeteria App by Sameer", url="#")
+
 
 
 
