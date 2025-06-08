@@ -54,7 +54,7 @@ if not st.session_state.logged_in:
             st.session_state.user = user
             load_data()
             st.success("Login successful!")
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Invalid credentials")
     st.stop()
@@ -189,11 +189,15 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
                 ax.pie(df['Orders'], labels=df['Item'], autopct='%1.1f%%', startangle=90)
                 ax.axis('equal')
                 st.pyplot(fig)
+            
+            # Cards showing popular items info
             for item, info in sorted_items:
                 if info['orders'] > 0:
                     card(
                         title=f"{item}",
-                        text=f"Ordered: {info['orders']} times\nRemaining: {info['quantity']}\nPrice: ₹{info['price']}",
+                        text=f"""<b>Ordered:</b> {info['orders']} times<br>
+                                 <b>Remaining:</b> {info['quantity']}<br>
+                                 <b>Price:</b> ₹{info['price']}""",
                         image="https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
                     )
 
