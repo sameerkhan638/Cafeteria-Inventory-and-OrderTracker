@@ -1,19 +1,3 @@
-import sys
-import os
-
-st.write("Python executable:", sys.executable)
-st.write("sys.path:", sys.path)
-
-import subprocess
-import sys
-
-try:
-    import streamlit_extras
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "streamlit-extras"])
-    import streamlit_extras
-
-
 import streamlit as st
 from streamlit_extras.card import card
 from streamlit_extras.let_it_rain import rain
@@ -70,13 +54,13 @@ if not st.session_state.logged_in:
             st.session_state.user = user
             load_data()
             st.success("Login successful!")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Invalid credentials")
     st.stop()
 
 # Theme toggle
-mode = st.sidebar.toggle("🌗 Dark Mode", help="Switch between light and dark themes")
+mode = st.sidebar.toggle("🍗 Dark Mode", help="Switch between light and dark themes")
 if mode:
     st.markdown("""
         <style>
@@ -131,7 +115,7 @@ if not data_loaded:
 inventory = st.session_state.inventory
 
 st.sidebar.image("https://img.freepik.com/free-vector/restaurant-menu-template_23-2147503760.jpg", use_column_width=True)
-menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📤 Export Data"]
+menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📄 Export Data"]
 choice = st.sidebar.radio("📌 Menu", menu)
 
 with stylable_container("menu-box", css_styles="margin-top: 30px"):
@@ -205,19 +189,15 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
                 ax.pie(df['Orders'], labels=df['Item'], autopct='%1.1f%%', startangle=90)
                 ax.axis('equal')
                 st.pyplot(fig)
-            
-            # Cards showing popular items info
             for item, info in sorted_items:
                 if info['orders'] > 0:
                     card(
                         title=f"{item}",
-                        text=f"""<b>Ordered:</b> {info['orders']} times<br>
-                                 <b>Remaining:</b> {info['quantity']}<br>
-                                 <b>Price:</b> ₹{info['price']}""",
+                        text=f"Ordered: {info['orders']} times\nRemaining: {info['quantity']}\nPrice: ₹{info['price']}",
                         image="https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
                     )
 
-    elif choice == "📤 Export Data":
+    elif choice == "📄 Export Data":
         st.subheader("📦 Export Inventory and Orders")
         export_df = pd.DataFrame([{
             "Item": item,
@@ -230,7 +210,6 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
         st.download_button("⬇️ Download as CSV", data=csv, file_name="cafeteria_data.csv", mime="text/csv")
 
 badge(type="github", name="Cafeteria App by Sameer", url="#")
-
 
 
 
