@@ -12,18 +12,85 @@ import json
 import os
 
 st.set_page_config(page_title="Cafeteria Tracker", layout="centered", page_icon="🍽️")
+st.markdown("""
+    <style>
+    html, body, [class*="css"]  {
+        background-color: #1e1e1e !important;
+        color: #f0f0f0 !important;
+    }
+    .title {
+        text-align: center;
+        font-size: 3em;
+        color: #ff4b4b;
+        font-weight: bold;
+        font-family: 'Trebuchet MS', sans-serif;
+    }
+    .menu-box {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+    }
+    .btn-style {
+        background-color: #f94144;
+        color: white;
+        font-size: 1.1em;
+        padding: 10px;
+        border-radius: 8px;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 DATA_FILE = "cafeteria_data.json"
+ORDERS_FILE = "orders.json"
+USERS_FILE = "users.json"
 
-# Dummy login data
-USERS = {
-    "student": "pass123",
-    "staff": "admin@123"
-}
+# Load users from file or initialize default
+if os.path.exists(USERS_FILE):
+    with open(USERS_FILE, "r") as f:
+        USERS = json.load(f)
+else:
+    USERS = {
+        "staff": "admin@123"
+    }
+    with open(USERS_FILE, "w") as f:
+        json.dump(USERS, f)
 
-# Login function
+def save_users():
+    with open(USERS_FILE, "w") as f:
+        json.dump(USERS, f)
+
 def login(username, password):
     return USERS.get(username) == password
+
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    st.title("🔐 Cafeteria Login")
+    user = st.text_input("Username")
+    pw = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if login(user, pw):
+            st.session_state.logged_in = True
+            st.session_state.user = user
+            st.success("Login successful!")
+            st.rerun()
+        else:
+            st.warning("User not found. Registering as student...")
+            USERS[user] = pw
+            save_users()
+            st.session_state.logged_in = True
+            st.session_state.user = user
+            st.success("New student registered and logged in.")
+            st.rerun()
+    st.stop()
 
 def save_data():
     with open(DATA_FILE, "w") as f:
@@ -41,81 +108,21 @@ def load_data():
         }
         save_data()
 
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-
-if not st.session_state.logged_in:
-    st.title("🔐 Cafeteria Login")
-    user = st.text_input("Username")
-    pw = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if login(user, pw):
-            st.session_state.logged_in = True
-            st.session_state.user = user
-            load_data()
-            st.success("Login successful!")
-            st.rerun()
-        else:
-            st.error("Invalid credentials")
-    st.stop()
-
-# Theme toggle
-mode = st.sidebar.toggle("🍗 Dark Mode", help="Switch between light and dark themes")
-if mode:
-    st.markdown("""
-        <style>
-        body {
-            background-color: #1e1e1e;
-            color: #e0e0e0;
-        }
-        .title {
-            color: #feca57;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-st.markdown("""
-    <style>
-    .title {
-        text-align: center;
-        font-size: 3em;
-        color: #ff4b4b;
-        font-weight: bold;
-        font-family: 'Trebuchet MS', sans-serif;
-    }
-    .menu-box {
-        background-color: #fefae0;
-        padding: 15px;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-    .btn-style {
-        background-color: #f94144;
-        color: white;
-        font-size: 1.1em;
-        padding: 10px;
-        border-radius: 8px;
-    }
-    input[type="number"]::-webkit-inner-spin-button,
-    input[type="number"]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    </style>
-""", unsafe_allow_html=True)
+load_data()
 
 st.markdown('<div class="title">🍽️ College Cafeteria Dashboard</div>', unsafe_allow_html=True)
-rain(emoji="☕", font_size=22, falling_speed=2, animation_length="infinite")
 
-# Load or initialize inventory
-data_loaded = 'inventory' in st.session_state
-if not data_loaded:
-    load_data()
+rain(
+    emoji=["🍔", "🥪", "🧃"],
+    font_size=28,
+    falling_speed=2,
+    animation_length="infinite"
+)
 
 inventory = st.session_state.inventory
 
 st.sidebar.image("https://img.freepik.com/free-vector/restaurant-menu-template_23-2147503760.jpg", use_column_width=True)
-menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📄 Export Data"]
+menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📄 Export Data", "🧾 View Order History"]
 choice = st.sidebar.radio("📌 Menu", menu)
 
 with stylable_container("menu-box", css_styles="margin-top: 30px"):
@@ -156,7 +163,15 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
                 qty = st.number_input("", key=item, min_value=0, max_value=details['quantity'], step=1, label_visibility="collapsed")
                 if qty > 0:
                     order[item] = qty
+
+        phone = st.text_input("📞 Your Phone Number")
+        email = st.text_input("📧 Your Email Address")
+
         if st.button("Submit Order ✅", use_container_width=True):
+            if not phone or not email:
+                st.warning("Please enter both phone number and email.")
+                st.stop()
+
             total = 0
             for item, qty in order.items():
                 if inventory[item]['quantity'] >= qty:
@@ -166,8 +181,25 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
                 else:
                     st.warning(f"⚠️ Not enough stock for {item}.")
             if total > 0:
-                st.success(f"🎉 Order Successful! Total Bill: ₹{total}")
                 save_data()
+                order_record = {
+                    "user": st.session_state.user,
+                    "phone": phone,
+                    "email": email,
+                    "items": order,
+                    "total": total,
+                    "timestamp": str(datetime.datetime.now())
+                }
+                if os.path.exists(ORDERS_FILE):
+                    with open(ORDERS_FILE, "r") as f:
+                        all_orders = json.load(f)
+                else:
+                    all_orders = []
+                all_orders.append(order_record)
+                with open(ORDERS_FILE, "w") as f:
+                    json.dump(all_orders, f, indent=2)
+
+                st.success(f"🎉 Order Successful! Total Bill: ₹{total}")
             else:
                 st.info("📝 Please select at least one item to place an order.")
 
@@ -208,6 +240,23 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
 
         csv = export_df.to_csv(index=False).encode('utf-8')
         st.download_button("⬇️ Download as CSV", data=csv, file_name="cafeteria_data.csv", mime="text/csv")
+
+    elif choice == "🧾 View Order History":
+        st.subheader("📜 Order History")
+        if os.path.exists(ORDERS_FILE):
+            with open(ORDERS_FILE, "r") as f:
+                all_orders = json.load(f)
+            if not all_orders:
+                st.info("No orders have been placed yet.")
+            else:
+                for order in reversed(all_orders):
+                    with st.expander(f"🧾 Order by {order['user']} on {order['timestamp']}"):
+                        st.markdown(f"📞 **Phone:** {order['phone']}\n\n📧 **Email:** {order['email']}")
+                        for item, qty in order['items'].items():
+                            st.markdown(f"- {item}: {qty} qty")
+                        st.markdown(f"💵 **Total Paid:** ₹{order['total']}")
+        else:
+            st.info("No orders have been placed yet.")
 
 badge(type="github", name="Cafeteria App by Sameer", url="#")
 
