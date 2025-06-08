@@ -3,7 +3,11 @@ from streamlit_extras.card import card
 from streamlit_extras.let_it_rain import rain
 from streamlit_extras.badges import badge
 from streamlit_extras.stylable_container import stylable_container
+from streamlit_extras.switch_page_button import switch_page
 import pandas as pd
+import matplotlib.pyplot as plt
+import hashlib
+import datetime
 import json
 import os
 
@@ -181,15 +185,10 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
             if chart_type == "Bar Chart":
                 st.bar_chart(df.set_index('Item'))
             else:
-                # Using Streamlit's native pie chart replacement (via Altair)
-                import altair as alt
-                pie_chart = alt.Chart(df).mark_arc().encode(
-                    theta=alt.Theta(field="Orders", type="quantitative"),
-                    color=alt.Color(field="Item", type="nominal"),
-                    tooltip=["Item", "Orders"]
-                )
-                st.altair_chart(pie_chart, use_container_width=True)
-
+                fig, ax = plt.subplots()
+                ax.pie(df['Orders'], labels=df['Item'], autopct='%1.1f%%', startangle=90)
+                ax.axis('equal')
+                st.pyplot(fig)
             for item, info in sorted_items:
                 if info['orders'] > 0:
                     card(
@@ -213,6 +212,7 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
         st.download_button("⬇️ Download as CSV", data=csv, file_name="cafeteria_data.csv", mime="text/csv")
 
 badge(type="github", name="Cafeteria App by Sameer", url="#")
+
 
 
 
