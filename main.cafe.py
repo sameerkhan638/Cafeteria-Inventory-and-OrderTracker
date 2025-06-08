@@ -1,12 +1,15 @@
 import streamlit as st
-import json
-import os
-import pandas as pd
-import matplotlib.pyplot as plt
 from streamlit_extras.card import card
 from streamlit_extras.let_it_rain import rain
 from streamlit_extras.badges import badge
 from streamlit_extras.stylable_container import stylable_container
+from streamlit_extras.switch_page_button import switch_page
+import pandas as pd
+import matplotlib.pyplot as plt
+import hashlib
+import datetime
+import json
+import os
 
 st.set_page_config(page_title="Cafeteria Tracker", layout="centered", page_icon="🍽️")
 
@@ -18,6 +21,7 @@ USERS = {
     "staff": "admin@123"
 }
 
+# Login function
 def login(username, password):
     return USERS.get(username) == password
 
@@ -30,24 +34,16 @@ def load_data():
         with open(DATA_FILE, "r") as f:
             st.session_state.inventory = json.load(f)
     else:
-        # Initialize default inventory if file doesn't exist
         st.session_state.inventory = {
             'Sandwich': {'price': 50, 'quantity': 10, 'orders': 0},
             'Burger': {'price': 80, 'quantity': 5, 'orders': 0},
             'Juice': {'price': 30, 'quantity': 20, 'orders': 0},
         }
-
-# Initialize session state keys early
-if 'user' not in st.session_state:
-    st.session_state.user = None
+        save_data()
 
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
-if 'inventory' not in st.session_state:
-    st.session_state.inventory = {}
-
-# LOGIN SCREEN
 if not st.session_state.logged_in:
     st.title("🔐 Cafeteria Login")
     user = st.text_input("Username")
@@ -58,14 +54,12 @@ if not st.session_state.logged_in:
             st.session_state.user = user
             load_data()
             st.success("Login successful!")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("Invalid credentials")
     st.stop()
 
-# Main App UI starts here
-
-# Optional: Dark mode toggle
+# Theme toggle
 mode = st.sidebar.toggle("🌗 Dark Mode", help="Switch between light and dark themes")
 if mode:
     st.markdown("""
@@ -80,7 +74,6 @@ if mode:
         </style>
     """, unsafe_allow_html=True)
 
-# Styling CSS
 st.markdown("""
     <style>
     .title {
@@ -114,11 +107,15 @@ st.markdown("""
 st.markdown('<div class="title">🍽️ College Cafeteria Dashboard</div>', unsafe_allow_html=True)
 rain(emoji="☕", font_size=22, falling_speed=2, animation_length="infinite")
 
+# Load or initialize inventory
+data_loaded = 'inventory' in st.session_state
+if not data_loaded:
+    load_data()
+
 inventory = st.session_state.inventory
 
-# Sidebar image and menu
 st.sidebar.image("https://img.freepik.com/free-vector/restaurant-menu-template_23-2147503760.jpg", use_column_width=True)
-menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📤 Export Data", "🚪 Logout"]
+menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📤 Export Data"]
 choice = st.sidebar.radio("📌 Menu", menu)
 
 with stylable_container("menu-box", css_styles="margin-top: 30px"):
@@ -212,9 +209,5 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
         csv = export_df.to_csv(index=False).encode('utf-8')
         st.download_button("⬇️ Download as CSV", data=csv, file_name="cafeteria_data.csv", mime="text/csv")
 
-    elif choice == "🚪 Logout":
-        st.session_state.logged_in = False
-        st.session_state.user = None
-        st.experimental_rerun()
-
 badge(type="github", name="Cafeteria App by Sameer", url="#")
+
