@@ -1,3 +1,19 @@
+import sys
+import os
+
+st.write("Python executable:", sys.executable)
+st.write("sys.path:", sys.path)
+
+import subprocess
+import sys
+
+try:
+    import streamlit_extras
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "streamlit-extras"])
+    import streamlit_extras
+
+
 import streamlit as st
 from streamlit_extras.card import card
 from streamlit_extras.let_it_rain import rain
@@ -189,6 +205,8 @@ with stylable_container("menu-box", css_styles="margin-top: 30px"):
                 ax.pie(df['Orders'], labels=df['Item'], autopct='%1.1f%%', startangle=90)
                 ax.axis('equal')
                 st.pyplot(fig)
+            
+            # Cards showing popular items info
             for item, info in sorted_items:
                 if info['orders'] > 0:
                     card(
