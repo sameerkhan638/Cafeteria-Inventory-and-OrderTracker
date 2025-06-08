@@ -1,6 +1,9 @@
 import streamlit as st
+from streamlit_extras.card import card
+from streamlit_extras.let_it_rain import rain
+from streamlit_extras.badges import badge
+from streamlit_extras.stylable_container import stylable_container
 import pandas as pd
-import matplotlib.pyplot as plt
 import json
 import os
 
@@ -14,6 +17,7 @@ USERS = {
     "staff": "admin@123"
 }
 
+# Login function
 def login(username, password):
     return USERS.get(username) == password
 
@@ -51,8 +55,8 @@ if not st.session_state.logged_in:
             st.error("Invalid credentials")
     st.stop()
 
-# Theme toggle (simple)
-mode = st.sidebar.checkbox("🌗 Dark Mode")
+# Theme toggle
+mode = st.sidebar.toggle("🌗 Dark Mode", help="Switch between light and dark themes")
 if mode:
     st.markdown("""
         <style>
@@ -60,7 +64,7 @@ if mode:
             background-color: #1e1e1e;
             color: #e0e0e0;
         }
-        h1, h2, h3, h4, h5 {
+        .title {
             color: #feca57;
         }
         </style>
@@ -74,7 +78,6 @@ st.markdown("""
         color: #ff4b4b;
         font-weight: bold;
         font-family: 'Trebuchet MS', sans-serif;
-        margin-bottom: 20px;
     }
     .menu-box {
         background-color: #fefae0;
@@ -88,15 +91,21 @@ st.markdown("""
         font-size: 1.1em;
         padding: 10px;
         border-radius: 8px;
-        border: none;
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
     }
     </style>
 """, unsafe_allow_html=True)
 
 st.markdown('<div class="title">🍽️ College Cafeteria Dashboard</div>', unsafe_allow_html=True)
+rain(emoji="☕", font_size=22, falling_speed=2, animation_length="infinite")
 
 # Load or initialize inventory
-if 'inventory' not in st.session_state:
+data_loaded = 'inventory' in st.session_state
+if not data_loaded:
     load_data()
 
 inventory = st.session_state.inventory
@@ -105,17 +114,7 @@ st.sidebar.image("https://img.freepik.com/free-vector/restaurant-menu-template_2
 menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📤 Export Data"]
 choice = st.sidebar.radio("📌 Menu", menu)
 
-def show_item_card(item, info):
-    st.markdown(f"""
-    <div style="border:1px solid #ddd; border-radius:12px; padding:15px; margin-bottom:10px; box-shadow: 2px 2px 6px #ccc;">
-        <h4 style="margin:0; color:#f94144;">{item}</h4>
-        <p><b>Ordered:</b> {info['orders']} times<br>
-        <b>Remaining:</b> {info['quantity']}<br>
-        <b>Price:</b> ₹{info['price']}</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with st.container():
+with stylable_container("menu-box", css_styles="margin-top: 30px"):
     if choice == "➕ Add Item":
         if st.session_state.user != "staff":
             st.warning("Only staff can add or update items.")
@@ -127,7 +126,7 @@ with st.container():
                 price = st.number_input("💰 Price (₹)", min_value=1)
             with col2:
                 qty = st.number_input("📦 Quantity", min_value=1, step=1)
-            if st.button("Add / Update"):
+            if st.button("Add / Update", type="primary"):
                 if name.strip():
                     if name in inventory:
                         inventory[name]['quantity'] += qty
@@ -153,7 +152,7 @@ with st.container():
                 qty = st.number_input("", key=item, min_value=0, max_value=details['quantity'], step=1, label_visibility="collapsed")
                 if qty > 0:
                     order[item] = qty
-        if st.button("Submit Order ✅"):
+        if st.button("Submit Order ✅", use_container_width=True):
             total = 0
             for item, qty in order.items():
                 if inventory[item]['quantity'] >= qty:
@@ -182,14 +181,24 @@ with st.container():
             if chart_type == "Bar Chart":
                 st.bar_chart(df.set_index('Item'))
             else:
-                fig, ax = plt.subplots()
-                ax.pie(df['Orders'], labels=df['Item'], autopct='%1.1f%%', startangle=90)
-                ax.axis('equal')
-                st.pyplot(fig)
-            st.write("---")
+                # Using Streamlit's native pie chart replacement (via Altair)
+                import altair as alt
+                pie_chart = alt.Chart(df).mark_arc().encode(
+                    theta=alt.Theta(field="Orders", type="quantitative"),
+                    color=alt.Color(field="Item", type="nominal"),
+                    tooltip=["Item", "Orders"]
+                )
+                st.altair_chart(pie_chart, use_container_width=True)
+
             for item, info in sorted_items:
                 if info['orders'] > 0:
-                    show_item_card(item, info)
+                    card(
+                        title=f"{item}",
+                        text=f"""<b>Ordered:</b> {info['orders']} times<br>
+                                 <b>Remaining:</b> {info['quantity']}<br>
+                                 <b>Price:</b> ₹{info['price']}""",
+                        image="https://cdn-icons-png.flaticon.com/512/1046/1046784.png",
+                    )
 
     elif choice == "📤 Export Data":
         st.subheader("📦 Export Inventory and Orders")
@@ -202,5 +211,8 @@ with st.container():
 
         csv = export_df.to_csv(index=False).encode('utf-8')
         st.download_button("⬇️ Download as CSV", data=csv, file_name="cafeteria_data.csv", mime="text/csv")
+
+badge(type="github", name="Cafeteria App by Sameer", url="#")
+
 
 
