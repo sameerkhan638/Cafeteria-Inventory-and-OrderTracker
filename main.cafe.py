@@ -43,14 +43,12 @@ st.markdown("""
         -webkit-appearance: none;
         margin: 0;
     }
-    </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 DATA_FILE = "cafeteria_data.json"
 ORDERS_FILE = "orders.json"
 USERS_FILE = "users.json"
 
-# Load users from file or initialize default
 if os.path.exists(USERS_FILE):
     with open(USERS_FILE, "r") as f:
         USERS = json.load(f)
@@ -115,13 +113,15 @@ st.markdown('<div class="title">🍽️ College Cafeteria Dashboard</div>', unsa
 rain(
     emoji=["🍔", "🥪", "🧃"],
     font_size=28,
-    falling_speed=2,
-    animation_length="infinite"
+    falling_speed=1,
+    animation_length="infinite",
+    animation_interval=600,
+    falling_animation_type="slow_drop",
+    burst_on_click=True
 )
 
 inventory = st.session_state.inventory
 
-st.sidebar.image("https://img.freepik.com/free-vector/restaurant-menu-template_23-2147503760.jpg", use_column_width=True)
 menu = ["➕ Add Item", "🛒 Place Order", "📊 Popularity Report", "📄 Export Data", "🧾 View Order History"]
 choice = st.sidebar.radio("📌 Menu", menu)
 
